@@ -79,7 +79,7 @@ const validateForm = async () => {
       });
 
       // Redirection vers la page de jeu
-      router.push({name: 'game'});
+      router.push({name: 'punto'});
     }
   } catch (e) {
     console.error(e);

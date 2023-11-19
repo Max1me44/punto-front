@@ -1,7 +1,7 @@
 import {createRouter, createWebHistory} from "vue-router";
 import ChoixBDD from "@/views/ChoixBDD.vue";
 import ChoixJoueurs from "@/views/ChoixJoueurs.vue";
-import PlateauJeu from "@/views/PlateauJeu.vue";
+import Punto from "@/views/Punto.vue";
 import DisplayStorage from "@/views/DisplayStorage.vue";
 
 const router = createRouter({
@@ -22,9 +22,9 @@ const router = createRouter({
             component: ChoixJoueurs,
         },
         {
-            path: "/game",
-            name: "game",
-            component: PlateauJeu,
+            path: "/punto",
+            name: "punto",
+            component: Punto,
         },
         {
             path: "/storage",

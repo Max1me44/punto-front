@@ -1,8 +1,8 @@
-interface Player {
+export interface Player {
     name: string;
 }
 
-interface PlayerConfig {
+export interface PlayerConfig {
     playerCount: number;
     players: Player[];
 }
@@ -24,4 +24,23 @@ export const storage = {
         const storedPlayerConfig = localStorage.getItem('playerConfig');
         return storedPlayerConfig ? JSON.parse(storedPlayerConfig) : null;
     },
+
+    getPlayers(): Player[] | null {
+        const playerConfig = this.getPlayerConfig();
+        return playerConfig ? playerConfig.players : null;
+    },
+
+    getPlayersTable(): string[] | null {
+        const playerConfig = this.getPlayers();
+        return playerConfig ? playerConfig.map((player) => player.name) : [''];
+    },
+
+    getPlayerCount(): number | null {
+        const playerConfig = this.getPlayerConfig();
+        return playerConfig ? playerConfig.playerCount : null;
+    },
+
+    clear(): void {
+        localStorage.clear();
+    }
 };
