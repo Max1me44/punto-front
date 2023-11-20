@@ -26,7 +26,8 @@ const couleurClass = computed(() => {
   font-weight: bold;
   cursor: pointer;
   transition: background-color 0.3s ease, color 0.3s ease;
-  border-radius: 5px; /* Ajoutez cette ligne pour arrondir les bords */
+  border-radius: 5px;
+  user-select: none; /* Empêche la sélection du texte */
 }
 
 .couleur-rouge {

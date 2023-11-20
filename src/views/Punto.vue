@@ -93,6 +93,9 @@ const distribuerCartes = (joueurList: string[]) => {
       tempMainsJoueurs[joueurList[i]] = tempMainsJoueurs[joueurList[i]].sort(() => Math.random() - 0.5);
     }
   }
+
+  // TODO: ajouter variables à la main des joueurs pour stocker les cartes jouées
+
   mainsJoueurs.value = tempMainsJoueurs;
 };
 

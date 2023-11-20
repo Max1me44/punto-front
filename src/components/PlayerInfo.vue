@@ -8,7 +8,6 @@
       <p>Prochaine carte:</p>
       <div v-if="nombreCartesRestantes > 0" class="next-card-info">
         <Carte :nombre="prochaineCarte.nombre" :couleur="prochaineCarte.couleur"/>
-        <span class="card-info">{{ prochaineCarte.couleur }} {{ prochaineCarte.nombre }}</span>
       </div>
       <span v-else class="no-card-info">Jeu de carte vide</span>
     </div>
@@ -70,29 +69,10 @@ const prochaineCarte = computed(() => {
   display: flex;
   align-items: center;
   margin-top: 10px;
-}
-
-.card-info {
-  margin-left: 10px;
-  font-weight: bold;
+  justify-content: center;
 }
 
 .no-card-info {
   font-style: italic;
-}
-
-button {
-  padding: 10px 15px;
-  cursor: pointer;
-  background-color: #4caf50;
-  color: #fff;
-  border: none;
-  border-radius: 5px;
-  font-size: 1em;
-  transition: background-color 0.3s ease;
-}
-
-button:hover {
-  background-color: #45a049;
 }
 </style>
