@@ -9,6 +9,9 @@ import {computed} from 'vue';
 
 const props = defineProps(['nombre', 'couleur']);
 
+/**
+ * Retourne la classe CSS correspondant à la couleur de la carte.
+ */
 const couleurClass = computed(() => {
   return `couleur-${props.couleur.toLowerCase()}`;
 });

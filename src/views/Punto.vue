@@ -9,7 +9,8 @@
     </div>
     <div class="info-part">
       <PlayerInfo :joueurActuel="joueurActuel" :mainsJoueurs="mainsJoueurs"/>
-      <!-- TODO: ajouter composant pour stats de tous les joueurs -->
+      <br/>
+      <StatsPlayers :joueurActuel="joueurActuel" :mainsJoueurs="mainsJoueurs"/>
     </div>
   </div>
 </template>
@@ -18,12 +19,18 @@
 import {ref, onMounted} from 'vue';
 import PlateauJeu from "@/components/PlateauJeu.vue";
 import PlayerInfo from '@/components/PlayerInfo.vue';
+import StatsPlayers from "@/components/StatsPlayers.vue";
 import {storage} from '@/stores/storage';
 import {COULEURS} from "@/constants/common";
 import router from "@/router";
 
 const joueurActuel = ref(0);
-const mainsJoueurs = ref<Record<string, { nombre: number; couleur: string }[]>>({});
+const mainsJoueurs = ref<Record<string, {
+  pioche: { nombre: number; couleur: string }[],
+  cartesJouees: { nombre: number; couleur: string }[],
+  series: { nombre: number; couleur: string }[],
+  cartesVictoire: { nombre: number; couleur: string }[]
+}>>({});
 
 onMounted(() => {
   const joueurListTemp = storage.getPlayersTable();
@@ -39,6 +46,10 @@ onMounted(() => {
   }
 });
 
+/**
+ * Distribue les cartes aux joueurs
+ * @param joueurList
+ */
 const distribuerCartes = (joueurList: string[]) => {
   const cartes: { nombre: number; couleur: string }[] = [];
 
@@ -57,48 +68,98 @@ const distribuerCartes = (joueurList: string[]) => {
   }
 
   // Crée les mains des joueurs
-  const tempMainsJoueurs: Record<string, { nombre: number; couleur: string }[]> = {};
+  const tempMainsJoueurs: Record<string, {
+    pioche: { nombre: number; couleur: string }[],
+    cartesJouees: { nombre: number; couleur: string }[],
+    series: { nombre: number; couleur: string }[],
+    cartesVictoire: { nombre: number; couleur: string }[]
+  }> = {};
 
   if (joueurList.length === 2) {
     const couleursJoueur1 = COULEURS.slice(0, 2);
     const couleursJoueur2 = COULEURS.slice(2);
 
-    tempMainsJoueurs[joueurList[0]] = cartes.filter(carte => couleursJoueur1.includes(carte.couleur));
-    tempMainsJoueurs[joueurList[1]] = cartes.filter(carte => couleursJoueur2.includes(carte.couleur));
+    tempMainsJoueurs[joueurList[0]] = {
+      pioche: cartes.filter(carte => couleursJoueur1.includes(carte.couleur)),
+      cartesJouees: [],
+      series: [],
+      cartesVictoire: []
+    };
+    tempMainsJoueurs[joueurList[1]] = {
+      pioche: cartes.filter(carte => couleursJoueur2.includes(carte.couleur)),
+      cartesJouees: [],
+      series: [],
+      cartesVictoire: []
+    };
   } else if (joueurList.length === 4) {
     const couleursJoueur1 = COULEURS.slice(0, 1);
     const couleursJoueur2 = COULEURS.slice(1, 2);
     const couleursJoueur3 = COULEURS.slice(2, 3);
     const couleursJoueur4 = COULEURS.slice(3);
 
-    tempMainsJoueurs[joueurList[0]] = cartes.filter(carte => couleursJoueur1.includes(carte.couleur));
-    tempMainsJoueurs[joueurList[1]] = cartes.filter(carte => couleursJoueur2.includes(carte.couleur));
-    tempMainsJoueurs[joueurList[2]] = cartes.filter(carte => couleursJoueur3.includes(carte.couleur));
-    tempMainsJoueurs[joueurList[3]] = cartes.filter(carte => couleursJoueur4.includes(carte.couleur));
+    tempMainsJoueurs[joueurList[0]] = {
+      pioche: cartes.filter(carte => couleursJoueur1.includes(carte.couleur)),
+      cartesJouees: [],
+      series: [],
+      cartesVictoire: []
+    };
+    tempMainsJoueurs[joueurList[1]] = {
+      pioche: cartes.filter(carte => couleursJoueur2.includes(carte.couleur)),
+      cartesJouees: [],
+      series: [],
+      cartesVictoire: []
+    };
+    tempMainsJoueurs[joueurList[2]] = {
+      pioche: cartes.filter(carte => couleursJoueur3.includes(carte.couleur)),
+      cartesJouees: [],
+      series: [],
+      cartesVictoire: []
+    };
+    tempMainsJoueurs[joueurList[3]] = {
+      pioche: cartes.filter(carte => couleursJoueur4.includes(carte.couleur)),
+      cartesJouees: [],
+      series: [],
+      cartesVictoire: []
+    };
   } else if (joueurList.length === 3) {
     const couleursJoueur1 = COULEURS.slice(0, 1);
     const couleursJoueur2 = COULEURS.slice(1, 2);
     const couleursJoueur3 = COULEURS.slice(2, 3);
 
-    tempMainsJoueurs[joueurList[0]] = cartes.filter(carte => couleursJoueur1.includes(carte.couleur));
-    tempMainsJoueurs[joueurList[1]] = cartes.filter(carte => couleursJoueur2.includes(carte.couleur));
-    tempMainsJoueurs[joueurList[2]] = cartes.filter(carte => couleursJoueur3.includes(carte.couleur));
+    tempMainsJoueurs[joueurList[0]] = {
+      pioche: cartes.filter(carte => couleursJoueur1.includes(carte.couleur)),
+      cartesJouees: [],
+      series: [],
+      cartesVictoire: []
+    };
+    tempMainsJoueurs[joueurList[1]] = {
+      pioche: cartes.filter(carte => couleursJoueur2.includes(carte.couleur)),
+      cartesJouees: [],
+      series: [],
+      cartesVictoire: []
+    };
+    tempMainsJoueurs[joueurList[2]] = {
+      pioche: cartes.filter(carte => couleursJoueur3.includes(carte.couleur)),
+      cartesJouees: [],
+      series: [],
+      cartesVictoire: []
+    };
 
     // Distribue 6 cartes au hasard de la couleur neutre (couleur non utilisée)
     const couleurNeutre = COULEURS.find(couleur => !couleursJoueur1.includes(couleur) && !couleursJoueur2.includes(couleur) && !couleursJoueur3.includes(couleur));
     const cartesCouleurNeutre = cartes.filter(carte => carte.couleur === couleurNeutre);
     for (let i = 0; i < joueurList.length; i++) {
-      tempMainsJoueurs[joueurList[i]].push(...cartesCouleurNeutre.splice(0, 6));
+      tempMainsJoueurs[joueurList[i]].pioche.push(...cartesCouleurNeutre.splice(0, 6));
       // Mélange les cartes du joueur
-      tempMainsJoueurs[joueurList[i]] = tempMainsJoueurs[joueurList[i]].sort(() => Math.random() - 0.5);
+      tempMainsJoueurs[joueurList[i]].pioche = tempMainsJoueurs[joueurList[i]].pioche.sort(() => Math.random() - 0.5);
     }
   }
-
-  // TODO: ajouter variables à la main des joueurs pour stocker les cartes jouées
-
   mainsJoueurs.value = tempMainsJoueurs;
 };
 
+/**
+ * Attend un évènement pour passer au joueur suivant (emis par le composant PlateauJeu)
+ */
 const passerAuJoueurSuivant = () => {
   joueurActuel.value = (joueurActuel.value + 1) % Object.keys(mainsJoueurs.value).length;
 };

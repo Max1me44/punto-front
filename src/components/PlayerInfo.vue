@@ -18,22 +18,28 @@
 import {computed} from "vue";
 import Carte from "@/components/Carte.vue";
 
-const props = defineProps(['joueurActuel', 'mainsJoueurs', 'tirerCarte']);
+const props = defineProps(['joueurActuel', 'mainsJoueurs']);
 
-// Retourne le nom du joueur actuel
+/**
+ * Renvoie le nom du joueur actuel
+ */
 const joueurList = computed(() => {
   return Object.keys(props.mainsJoueurs);
 });
 
-// Retourne le nombre de cartes restantes pour le joueur actuel
+/**
+ * Renvoie le nombre de cartes restantes pour le joueur actuel
+ */
 const nombreCartesRestantes = computed(() => {
   const joueurActuel = joueurList.value[props.joueurActuel];
-  return props.mainsJoueurs[joueurActuel] ? props.mainsJoueurs[joueurActuel].length : 0;
+  return props.mainsJoueurs[joueurActuel] ? props.mainsJoueurs[joueurActuel].pioche.length : 0;
 });
 
-// Retourne la prochaine carte du joueur actuel
+/**
+ * Renvoie la prochaine carte du joueur actuel
+ */
 const prochaineCarte = computed(() => {
-  return props.mainsJoueurs[joueurList.value[props.joueurActuel]][0];
+  return props.mainsJoueurs[joueurList.value[props.joueurActuel]].pioche[0];
 });
 </script>
 
