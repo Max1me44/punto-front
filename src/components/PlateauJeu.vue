@@ -237,8 +237,6 @@ const verifierVictoire = (row: number, col: number, couleur: string) => {
  * @param couleur couleur de la carte posée
  */
 const verifierSerie = (row: number, col: number, couleur: string) => {
-  const joueurActuel = Object.keys(props.mainsJoueurs)[props.joueurActuel];
-
   // Vérifie la série horizontale
   verifierDirection(row, col, 0, 1, couleur, 'serie');
 
@@ -280,7 +278,7 @@ const verifierDirection = (row: number, col: number, dirX: number, dirY: number,
         if (type === 'victoire') {
           afficherVictoire(couleur);
         } else {
-          stockerSerie(row, col, i, dirX, dirY, couleur);
+          stockerSerie(row, col, i, dirX, dirY);
         }
         return true;
       }
@@ -289,7 +287,6 @@ const verifierDirection = (row: number, col: number, dirX: number, dirY: number,
   return false;
 };
 
-// Stocke la série dans la mainsJoueurs
 /**
  * Stocke une série dans la mainsJoueurs
  * @param row ligne de la case
@@ -297,9 +294,8 @@ const verifierDirection = (row: number, col: number, dirX: number, dirY: number,
  * @param index index de la série dans la mainsJoueurs
  * @param dirX déplacement horizontale
  * @param dirY déplacement verticale
- * @param couleur couleur de la carte posée
  */
-const stockerSerie = (row: number, col: number, index: number, dirX: number, dirY: number, couleur: string) => {
+const stockerSerie = (row: number, col: number, index: number, dirX: number, dirY: number) => {
   const joueurActuel = Object.keys(props.mainsJoueurs)[props.joueurActuel];
   const conditionSerie = Object.keys(props.mainsJoueurs).length === 2 ? 4 : 3;
 
@@ -320,7 +316,10 @@ const stockerSerie = (row: number, col: number, index: number, dirX: number, dir
   console.log(`Série trouvée par le joueur ${joueurActuel}:`, nouvelleSerie);
 };
 
-// déclare la partie terminée et affiche le gagnant
+/**
+ * Affiche le gagnant de la partie
+ * @param couleur couleur de la carte posée
+ */
 const afficherVictoire = (couleur: string) => {
   console.log(`Le joueur ${Object.keys(props.mainsJoueurs)[props.joueurActuel]} a remporté la manche avec la couleur ${couleur}!`);
 };
