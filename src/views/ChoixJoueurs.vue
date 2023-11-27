@@ -82,7 +82,6 @@ const validateForm = async () => {
       router.push({name: 'punto'});
     }
   } catch (e) {
-    console.error(e);
     error.value = 'Erreur inconue';
   }
 };

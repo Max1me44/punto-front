@@ -30,9 +30,10 @@
 
 <script setup lang="ts">
 import Carte from '@/components/Carte.vue';
-import {ref, onMounted} from 'vue';
+import {ref, onMounted, watch} from 'vue';
 import {ElAlert} from 'element-plus';
 import {TAILLE_PLATEAU} from "@/constants/common";
+import {ElMessage, ElMessageBox} from 'element-plus'
 
 const props = defineProps(['joueurActuel', 'mainsJoueurs']);
 const emit = defineEmits();
@@ -53,6 +54,35 @@ const alerte = ref({
 onMounted(() => {
   initialiserPlateau();
 });
+
+watch(() => props.joueurActuel, (nouveauJoueurActuel) => {
+  const joueurActuel = Object.keys(props.mainsJoueurs)[nouveauJoueurActuel];
+  if (peutJouer(joueurActuel)) {
+    // Ne fait rien, attends que le joueur actuel pose une carte
+  } else {
+    findGagnant();
+  }
+});
+
+/**
+ * Vérifie si le joueur peut jouer une carte
+ * @param joueur joueur actuel
+ * @returns true si le joueur peut jouer une carte, false sinon
+ */
+const peutJouer = (joueur: string) => {
+  if (props.mainsJoueurs[joueur].pioche.length === 0) {
+    return false;
+  }
+  // parcour le plateau et vérifier si le joueur peut jouer sa carte
+  for (let row = 0; row < TAILLE_PLATEAU; row++) {
+    for (let col = 0; col < TAILLE_PLATEAU; col++) {
+      if (carteJouable(row, col)) {
+        return true;
+      }
+    }
+  }
+  return false;
+};
 
 /**
  * Initialisation du plateau de jeu, rempli le plateau de cases vides et place la carte active au milieu du plateau
@@ -92,22 +122,16 @@ const placerCarte = (row: number, col: number) => {
 
   // Vérifie si la case est vide ou si la carte est active
   if (plateau.value[row][col].carteVide === true || carteJouable(row, col)) {
-    if (props.mainsJoueurs[joueurActuel].pioche.length === 0) {
-      afficherAlerte("Vous n'avez plus de cartes.");
-      return;
-    } else {
-      // Récupère la première carte du joueur actuel, on la pose sur le plateau et la supprime de la main du joueur
-      const carte = props.mainsJoueurs[joueurActuel].pioche.shift(); // supprime la carte de pioche
-      props.mainsJoueurs[joueurActuel].cartesJouees.push(carte); // ajoute la carte dans les cartes jouées
-      plateau.value[row][col].carteVide = false;
-      plateau.value[row][col].nombre = carte.nombre;
-      plateau.value[row][col].couleur = carte.couleur;
-      console.log(`Carte ${carte.couleur} ${carte.nombre} (${row}, ${col}) par le joueur ${joueurActuel}`);
-      verifierVictoire(row, col, carte.couleur); // Vérifie si le joueur actuel a gagné
-      verifierSerie(row, col, carte.couleur); // Vérifie si le joueur actuel a une série
-      actualiserPlateau(row, col);
-      emit('change-joueur'); // Evènement pour passer au joueur suivant
-    }
+    // Récupère la première carte du joueur actuel, on la pose sur le plateau et la supprime de la main du joueur
+    const carte = props.mainsJoueurs[joueurActuel].pioche.shift(); // supprime la carte de pioche
+    props.mainsJoueurs[joueurActuel].cartesJouees.push(carte); // ajoute la carte dans les cartes jouées
+    plateau.value[row][col].carteVide = false;
+    plateau.value[row][col].nombre = carte.nombre;
+    plateau.value[row][col].couleur = carte.couleur;
+    verifierVictoire(row, col, carte.couleur); // Vérifie si le joueur actuel a gagné
+    verifierSerie(row, col, carte.couleur); // Vérifie si le joueur actuel a une série
+    actualiserPlateau(row, col);
+    emit('change-joueur'); // Evènement pour passer au joueur suivant
   } else {
     afficherAlerte("Vous ne pouvez pas placer cette carte car elle est inférieure à la carte présente sur le plateau.");
   }
@@ -117,15 +141,19 @@ const placerCarte = (row: number, col: number) => {
  * Vérifie si la carte peut être jouée, carte avec nombre supérieur à la carte présente sur le plateau
  * @param row ligne de la case
  * @param col colonne de la case
+ * @returns true si la carte peut être jouée, false sinon
  */
 const carteJouable = (row: number, col: number) => {
   const cartePlateau = plateau.value[row][col];
-  if (cartePlateau && cartePlateau.nombre) {
-    const joueurActuel = Object.keys(props.mainsJoueurs)[props.joueurActuel];
-    const carteMain = props.mainsJoueurs[joueurActuel].pioche[0];
-    return carteMain.nombre > cartePlateau.nombre;
+  if (!cartePlateau || cartePlateau.injouable || !cartePlateau.active) {
+    return false;
   }
-  return true; // Si la case est vide, la carte est jouable
+  if (cartePlateau.active && cartePlateau.carteVide) {
+    return true;
+  }
+  const joueurActuel = Object.keys(props.mainsJoueurs)[props.joueurActuel];
+  const carteMain = props.mainsJoueurs[joueurActuel].pioche[0];
+  return cartePlateau.active && !cartePlateau.carteVide && cartePlateau.nombre && carteMain.nombre > cartePlateau.nombre;
 };
 
 /**
@@ -276,7 +304,8 @@ const verifierDirection = (row: number, col: number, dirX: number, dirY: number,
       }
       if (count === condition) {
         if (type === 'victoire') {
-          afficherVictoire(couleur);
+          const conditionVictoire = Object.keys(props.mainsJoueurs).length === 2 ? 5 : 4;
+          afficherVictoire(Object.keys(props.mainsJoueurs)[props.joueurActuel], `Victoire en alignant ${conditionVictoire} cartes`);
         } else {
           stockerSerie(row, col, i, dirX, dirY);
         }
@@ -300,7 +329,10 @@ const stockerSerie = (row: number, col: number, index: number, dirX: number, dir
   const conditionSerie = Object.keys(props.mainsJoueurs).length === 2 ? 4 : 3;
 
   // Série trouvée, stocke la série dans la mainsJoueurs
-  const nouvelleSerie: { nombre: number; couleur: string }[] = [];
+  const nouvelleSerie: {
+    nombre: number;
+    couleur: string
+  }[] = [];
   for (let j = index - (conditionSerie - 1); j <= index; j++) {
     const carte = plateau.value[row + j * dirY][col + j * dirX];
     if (carte && !carte.carteVide) {
@@ -313,16 +345,102 @@ const stockerSerie = (row: number, col: number, index: number, dirX: number, dir
 
   // Ajoute la série à une nouvelle ligne dans mainsJoueurs.series
   props.mainsJoueurs[joueurActuel].series.push(nouvelleSerie);
-  console.log(`Série trouvée par le joueur ${joueurActuel}:`, nouvelleSerie);
 };
 
 /**
  * Affiche le gagnant de la partie
- * @param couleur couleur de la carte posée
+ * @param joueur joueur gagnant
+ * @param typeVictoire type de victoire (victoire ou série)
  */
-const afficherVictoire = (couleur: string) => {
-  console.log(`Le joueur ${Object.keys(props.mainsJoueurs)[props.joueurActuel]} a remporté la manche avec la couleur ${couleur}!`);
+const afficherVictoire = (joueur: string, typeVictoire: string) => {
+  openVictoire(joueur, typeVictoire);
 };
+
+/**
+ * Trouve le gagnant de la partie lorsqu'un joueur ne peut plus jouer
+ */
+const findGagnant = () => {
+  // le joueur qui a le plus de série gagne. En cas d‘égalité, la série avec le moins de points (somme des cartes de la série) gagne.
+  const joueurList = Object.keys(props.mainsJoueurs);
+  let joueurGagnant = joueurList[0];
+  let gagnePlusDeSeries = false;
+  for (let i = 1; i < joueurList.length; i++) {
+    const joueur = joueurList[i];
+    if (props.mainsJoueurs[joueur].series.length > props.mainsJoueurs[joueurGagnant].series.length) {
+      gagnePlusDeSeries = true;
+      joueurGagnant = joueur;
+    } else if (props.mainsJoueurs[joueur].series.length === props.mainsJoueurs[joueurGagnant].series.length) {
+      let sommeJoueur = 0;
+      let sommeJoueurGagnant = 0;
+      for (let serie of props.mainsJoueurs[joueur].series) {
+        for (let carte of serie) {
+          sommeJoueur += carte.nombre;
+        }
+      }
+      for (let serie of props.mainsJoueurs[joueurGagnant].series) {
+        for (let carte of serie) {
+          sommeJoueurGagnant += carte.nombre;
+        }
+      }
+      if (sommeJoueur < sommeJoueurGagnant) {
+        joueurGagnant = joueur;
+        gagnePlusDeSeries = false;
+      }
+    }
+  }
+  let typeVictoire = 'Victoire car possède la série la moins chère';
+  if (gagnePlusDeSeries) {
+    typeVictoire = 'Victoire car possède le plus de séries';
+  }
+  afficherVictoire(joueurGagnant, `Plus de cartes jouables. ${typeVictoire}`);
+};
+
+/**
+ * Ouvre une fenêtre de victoire
+ * @param joueur joueur gagnant
+ * @param typeVictoire type de victoire (victoire ou série)
+ */
+const openVictoire = (joueur: string, typeVictoire: string) => {
+  ElMessageBox.confirm(
+      typeVictoire,
+      `Victoire du joueur ${joueur} ! ✌️🏆`,
+      {
+        confirmButtonText: 'Rejouer',
+        cancelButtonText: 'Quitter',
+        type: 'success',
+        center: true,
+        showClose: false,
+        closeOnPressEscape: false,
+        closeOnClickModal: false,
+        beforeClose: (action, instance, done) => {
+          if (action === 'confirm') {
+            instance.confirmButtonLoading = true
+            instance.confirmButtonText = 'Chargement...'
+            setTimeout(() => {
+              done()
+              setTimeout(() => {
+                instance.confirmButtonLoading = false
+              }, 300)
+            }, 3000)
+          } else {
+            done()
+          }
+        },
+      }
+  )
+      .then(() => {
+        ElMessage({
+          type: 'success',
+          message: 'Partie relancée, vous pouvez rejouer !',
+        })
+      })
+      .catch(() => {
+        ElMessage({
+          type: 'info',
+          message: 'Fin de la partie, à bientôt !',
+        })
+      })
+}
 </script>
 
 <style scoped>
