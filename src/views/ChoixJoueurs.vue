@@ -45,10 +45,20 @@ const form = ref({
 });
 
 const playerFormRef = ref(null); // Référence au formulaire
-
 const error = ref(''); // Message d'erreur si formulaire invalide
 
-// Validation du formulaire, stockage des données dans le storage si formulaire valide
+// Check si les valeurs est déjà stockée dans le storage
+onMounted(() => {
+  const storedPlayerConfig = storage.getPlayerConfig();
+  if (storedPlayerConfig) {
+    form.value.playerCount = storedPlayerConfig.playerCount;
+    form.value.players = storedPlayerConfig.players;
+  }
+});
+
+/**
+ * Valide le formulaire et stocke les données dans le storage si valide
+ */
 const validateForm = async () => {
   try {
     if (playerFormRef.value) {
@@ -85,15 +95,6 @@ const validateForm = async () => {
     error.value = 'Erreur inconue';
   }
 };
-
-// Check si les valeurs est déjà stockée dans le storage
-onMounted(() => {
-  const storedPlayerConfig = storage.getPlayerConfig();
-  if (storedPlayerConfig) {
-    form.value.playerCount = storedPlayerConfig.playerCount;
-    form.value.players = storedPlayerConfig.players;
-  }
-});
 </script>
 
 

@@ -4,6 +4,7 @@
   </div>
 </template>
 
+
 <script setup lang="ts">
 import {computed} from 'vue';
 
@@ -16,6 +17,7 @@ const couleurClass = computed(() => {
   return `couleur-${props.couleur.toLowerCase()}`;
 });
 </script>
+
 
 <style scoped>
 .carte {

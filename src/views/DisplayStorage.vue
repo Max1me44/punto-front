@@ -18,11 +18,6 @@ import {storage} from "@/stores/storage";
 const databaseType = ref('');
 const playerConfig = ref('');
 
-const updateLocalStorageValues = () => {
-  databaseType.value = storage.getDatabaseType() || 'Non spécifié';
-  playerConfig.value = JSON.stringify(storage.getPlayerConfig()) || 'Non spécifié';
-};
-
 onMounted(() => {
   updateLocalStorageValues();
   window.addEventListener('storage', updateLocalStorageValues);
@@ -31,6 +26,14 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('storage', updateLocalStorageValues);
 });
+
+/**
+ * Met à jour les valeurs affichées dans le composant
+ */
+const updateLocalStorageValues = () => {
+  databaseType.value = storage.getDatabaseType() || 'Non spécifié';
+  playerConfig.value = JSON.stringify(storage.getPlayerConfig()) || 'Non spécifié';
+};
 </script>
 
 

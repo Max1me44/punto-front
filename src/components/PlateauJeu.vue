@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div :key="reloadPlateauJeu">
     <div class="plateau-jeu">
       <div v-for="(row, rowIndex) in plateau" :key="rowIndex" class="plateau-row">
         <div v-for="(cell, colIndex) in row" :key="colIndex" class="plateau-cell">
@@ -28,14 +28,16 @@
   </div>
 </template>
 
+
 <script setup lang="ts">
 import Carte from '@/components/Carte.vue';
 import {ref, onMounted, watch} from 'vue';
 import {ElAlert} from 'element-plus';
 import {TAILLE_PLATEAU} from "@/constants/common";
 import {ElMessage, ElMessageBox} from 'element-plus'
+import router from "@/router";
 
-const props = defineProps(['joueurActuel', 'mainsJoueurs']);
+const props = defineProps(['joueurActuel', 'mainsJoueurs', 'reloadPlateauJeu']);
 const emit = defineEmits();
 const plateau = ref<Array<Array<{
   active: boolean,
@@ -128,11 +130,13 @@ const placerCarte = (row: number, col: number) => {
     plateau.value[row][col].carteVide = false;
     plateau.value[row][col].nombre = carte.nombre;
     plateau.value[row][col].couleur = carte.couleur;
-    verifierVictoire(row, col, carte.couleur); // Vérifie si le joueur actuel a gagné
-    verifierSerie(row, col, carte.couleur); // Vérifie si le joueur actuel a une série
+    if (!verifierVictoire(row, col, carte.couleur)) { // Vérifie si le joueur actuel a gagné
+      verifierSerie(row, col, carte.couleur); // Vérifie si le joueur actuel a une série
+      emit('changement', 0); // Evènement pour passer au joueur suivant
+    }
     actualiserPlateau(row, col);
-    emit('change-joueur'); // Evènement pour passer au joueur suivant
   } else {
+    emit('changement', -1); // Evènement null
     afficherAlerte("Vous ne pouvez pas placer cette carte car elle est inférieure à la carte présente sur le plateau.");
   }
 };
@@ -239,22 +243,22 @@ const actualiserPlateau = (row: number, col: number) => {
 const verifierVictoire = (row: number, col: number, couleur: string) => {
   // Victoire horizontale
   if (verifierDirection(row, col, 0, 1, couleur, 'victoire')) {
-    return;
+    return true;
   }
 
   // Victoire verticale
   if (verifierDirection(row, col, 1, 0, couleur, 'victoire')) {
-    return;
+    return true;
   }
 
   // Victoire diagonale (\)
   if (verifierDirection(row, col, 1, 1, couleur, 'victoire')) {
-    return;
+    return true;
   }
 
   // Victoire diagonale (/)
   if (verifierDirection(row, col, 1, -1, couleur, 'victoire')) {
-    return;
+    return true;
   }
 };
 
@@ -286,9 +290,11 @@ const verifierSerie = (row: number, col: number, couleur: string) => {
  * @param dirY direction Y
  * @param couleur couleur de la carte posée
  * @param type type de vérification (victoire ou série)
+ * @returns true si le joueur actuel a une série ou une victoire, false sinon
  */
 const verifierDirection = (row: number, col: number, dirX: number, dirY: number, couleur: string, type: 'victoire' | 'serie'): boolean => {
   let count = 0;
+  let cartesSerieVictoire: { nombre: number; couleur: string }[] = []; // utiliser lorsque victoire
   const nbJoueurs = Object.keys(props.mainsJoueurs).length;
   const condition = type === 'victoire' ? (nbJoueurs === 2 ? 5 : 4) : (nbJoueurs === 2 ? 4 : 3);
 
@@ -299,12 +305,32 @@ const verifierDirection = (row: number, col: number, dirX: number, dirY: number,
       const caseCourante = plateau.value[newRow][newCol];
       if (!caseCourante.carteVide && caseCourante.couleur === couleur) {
         count++;
+        if (type === 'victoire') {
+          cartesSerieVictoire.push({
+            nombre: caseCourante.nombre!,
+            couleur: caseCourante.couleur!
+          });
+        }
       } else {
         count = 0;
+        cartesSerieVictoire = [];
       }
       if (count === condition) {
         if (type === 'victoire') {
           const conditionVictoire = Object.keys(props.mainsJoueurs).length === 2 ? 5 : 4;
+          // Retire de cartesJouees la carte la plus haute de cartesSerieVictoire et la stocke dans cartesVictoire
+          let carteSupprime = cartesSerieVictoire[0];
+          for (let j = 1; j < cartesSerieVictoire.length; j++) {
+            if (cartesSerieVictoire[j].nombre > carteSupprime.nombre) {
+              carteSupprime = cartesSerieVictoire[j];
+            }
+          }
+          const joueurAct = Object.keys(props.mainsJoueurs)[props.joueurActuel];
+          props.mainsJoueurs[joueurAct].cartesJouees.splice(props.mainsJoueurs[joueurAct].cartesJouees.findIndex((carte: {
+            nombre: number;
+            couleur: string
+          }) => carte === carteSupprime), 1);
+          props.mainsJoueurs[joueurAct].cartesVictoire.push(carteSupprime);
           afficherVictoire(Object.keys(props.mainsJoueurs)[props.joueurActuel], `Victoire en alignant ${conditionVictoire} cartes`);
         } else {
           stockerSerie(row, col, i, dirX, dirY);
@@ -344,7 +370,10 @@ const stockerSerie = (row: number, col: number, index: number, dirX: number, dir
   }
 
   // Ajoute la série à une nouvelle ligne dans mainsJoueurs.series
-  props.mainsJoueurs[joueurActuel].series.push(nouvelleSerie);
+  props.mainsJoueurs[joueurActuel].series.push({
+    serie: nouvelleSerie,
+    totalSerie: nouvelleSerie.reduce((total, carte) => total + carte.nombre, 0)
+  });
 };
 
 /**
@@ -357,42 +386,84 @@ const afficherVictoire = (joueur: string, typeVictoire: string) => {
 };
 
 /**
- * Trouve le gagnant de la partie lorsqu'un joueur ne peut plus jouer
+ * Trouve le gagnant de la partie et supprime la carte la plus haute.
+ * Joueur gagnant avec le plus de séries, suppression de la carte la plus haute qu'il possède parmie toutes ses séries.
+ * Si même nombre de séries, joueur gagnant avec la série la moins chère, suppression de la carte la plus haute de la série gagnante.
  */
 const findGagnant = () => {
-  // le joueur qui a le plus de série gagne. En cas d‘égalité, la série avec le moins de points (somme des cartes de la série) gagne.
-  const joueurList = Object.keys(props.mainsJoueurs);
-  let joueurGagnant = joueurList[0];
+  const joueurs = Object.keys(props.mainsJoueurs);
+  let joueurGagnantNom = joueurs[0];
+  let joueurGagnant = props.mainsJoueurs[joueurGagnantNom];
+  let indexSerieGagnante = 0;
   let gagnePlusDeSeries = false;
-  for (let i = 1; i < joueurList.length; i++) {
-    const joueur = joueurList[i];
-    if (props.mainsJoueurs[joueur].series.length > props.mainsJoueurs[joueurGagnant].series.length) {
-      gagnePlusDeSeries = true;
+
+  // Recherche le joueur gagnant en fonction des series
+  for (let i = 1; i < joueurs.length; i++) {
+    const joueurNom = joueurs[i];
+    const joueur = props.mainsJoueurs[joueurNom];
+
+    // Joueur avec le plus de séries
+    if (joueur.series.length > joueurGagnant.series.length) {
+      joueurGagnantNom = joueurNom;
       joueurGagnant = joueur;
-    } else if (props.mainsJoueurs[joueur].series.length === props.mainsJoueurs[joueurGagnant].series.length) {
-      let sommeJoueur = 0;
-      let sommeJoueurGagnant = 0;
-      for (let serie of props.mainsJoueurs[joueur].series) {
-        for (let carte of serie) {
-          sommeJoueur += carte.nombre;
+      gagnePlusDeSeries = true;
+    } else if (joueur.series.length === joueurGagnant.series.length) {
+      // Même nombre de séries, joueur gagnant avec la série la moins chère
+      for (let j = 0; j < joueur.series.length; j++) {
+        if (joueur.series[j].totalSerie < joueurGagnant.series[j].totalSerie) {
+          joueurGagnantNom = joueurNom;
+          joueurGagnant = joueur;
+          indexSerieGagnante = j;
+          gagnePlusDeSeries = false;
         }
-      }
-      for (let serie of props.mainsJoueurs[joueurGagnant].series) {
-        for (let carte of serie) {
-          sommeJoueurGagnant += carte.nombre;
-        }
-      }
-      if (sommeJoueur < sommeJoueurGagnant) {
-        joueurGagnant = joueur;
-        gagnePlusDeSeries = false;
       }
     }
   }
-  let typeVictoire = 'Victoire car possède la série la moins chère';
+
+  let typeVictoire = 'Victoire car possède le plus de séries';
   if (gagnePlusDeSeries) {
-    typeVictoire = 'Victoire car possède le plus de séries';
+    // Supprime la carte la plus haute de toutes les séries
+    let carteSupprime = joueurGagnant.series[0].serie[0];
+    let indexSerieSupprime = 0;
+
+    // Parcours toutes les séries
+    for (let i = 0; i < joueurGagnant.series.length; i++) {
+      // Parcours toutes les cartes de la série
+      for (let j = 1; j < joueurGagnant.series[i].serie.length; j++) {
+        if (joueurGagnant.series[i].serie[j].nombre > carteSupprime.nombre) {
+          carteSupprime = joueurGagnant.series[i].serie[j];
+          indexSerieSupprime = i;
+        }
+      }
+    }
+
+    // Supprime la carte dans les cartesJouees et la stocke dans cartesVictoire
+    joueurGagnant.cartesJouees.splice(joueurGagnant.cartesJouees.findIndex((carte: {
+      nombre: number;
+      couleur: string
+    }) => carte === carteSupprime), 1);
+    joueurGagnant.cartesVictoire.push(carteSupprime);
+  } else {
+    typeVictoire = 'Victoire car possède la série la moins chère';
+    // Récupère la carte la plus haute de la série gagnante
+    let carteSupprime = joueurGagnant.series[indexSerieGagnante].serie[0];
+
+    // Parcours toutes les cartes de la série
+    for (let j = 1; j < joueurGagnant.series[indexSerieGagnante].serie.length; j++) {
+      if (joueurGagnant.series[indexSerieGagnante].serie[j].nombre > carteSupprime.nombre) {
+        carteSupprime = joueurGagnant.series[indexSerieGagnante].serie[j];
+      }
+    }
+
+    // Supprime la carte dans les cartesJouees et la stocke dans cartesVictoire
+    joueurGagnant.cartesJouees.splice(joueurGagnant.cartesJouees.findIndex((carte: {
+      nombre: number;
+      couleur: string
+    }) => carte === carteSupprime), 1);
+    joueurGagnant.cartesVictoire.push(carteSupprime);
   }
-  afficherVictoire(joueurGagnant, `Plus de cartes jouables. ${typeVictoire}`);
+
+  afficherVictoire(joueurGagnantNom, `Plus de cartes jouables. ${typeVictoire}`);
 };
 
 /**
@@ -414,6 +485,7 @@ const openVictoire = (joueur: string, typeVictoire: string) => {
         closeOnClickModal: false,
         beforeClose: (action, instance, done) => {
           if (action === 'confirm') {
+            emit('changement', 1); // Evènement pour passer au joueur suivant, redistribuer les cartes, réinitialiser le plateau
             instance.confirmButtonLoading = true
             instance.confirmButtonText = 'Chargement...'
             setTimeout(() => {
@@ -421,9 +493,10 @@ const openVictoire = (joueur: string, typeVictoire: string) => {
               setTimeout(() => {
                 instance.confirmButtonLoading = false
               }, 300)
-            }, 3000)
+            }, 1000)
           } else {
             done()
+            router.push('/joueurs');
           }
         },
       }
@@ -442,6 +515,7 @@ const openVictoire = (joueur: string, typeVictoire: string) => {
       })
 }
 </script>
+
 
 <style scoped>
 .plateau-jeu {

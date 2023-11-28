@@ -34,16 +34,6 @@ const options = [
   {value: "sqlite", text: "SQLite"},
 ];
 
-// Met à jour la valeur sélectionnée
-const selectDatabase = (value) => {
-  selectedValue.value = value;
-};
-
-// Enregistre la valeur sélectionnée dans le storage lorsqu'on clique sur le bouton de validation
-const saveDatabaseType = () => {
-  storage.setDatabaseType(selectedValue.value);
-};
-
 // Check si une valeur est déjà stockée dans le storage
 onMounted(() => {
   const storedDatabaseType = storage.getDatabaseType();
@@ -51,6 +41,21 @@ onMounted(() => {
     selectedValue.value = storedDatabaseType;
   }
 });
+
+/**
+ * Met à jour la valeur sélectionnée
+ * @param value Valeur sélectionnée
+ */
+const selectDatabase = (value) => {
+  selectedValue.value = value;
+};
+
+/**
+ * Enregistre la valeur sélectionnée dans le storage
+ */
+const saveDatabaseType = () => {
+  storage.setDatabaseType(selectedValue.value);
+};
 </script>
 
 

@@ -4,7 +4,8 @@
       <PlateauJeu
           :joueurActuel="joueurActuel"
           :mainsJoueurs="mainsJoueurs"
-          @change-joueur="passerAuJoueurSuivant"
+          :key="reloadPlateauJeu"
+          @changement="actualisationPlateauJeu"
       />
     </div>
     <div class="info-part">
@@ -15,6 +16,7 @@
   </div>
 </template>
 
+
 <script setup lang="ts">
 import {ref, onMounted} from 'vue';
 import PlateauJeu from "@/components/PlateauJeu.vue";
@@ -24,11 +26,13 @@ import {storage} from '@/stores/storage';
 import {COULEURS} from "@/constants/common";
 import router from "@/router";
 
+const reloadPlateauJeu = ref(0); // Permet de recharger le composant PlateauJeu lorsque les joueurs rejouent
+
 const joueurActuel = ref(0);
 const mainsJoueurs = ref<Record<string, {
   pioche: { nombre: number; couleur: string }[],
   cartesJouees: { nombre: number; couleur: string }[],
-  series: { nombre: number; couleur: string }[],
+  series: { serie: { nombre: number; couleur: string }[], totalSerie: number }[],
   cartesVictoire: { nombre: number; couleur: string }[]
 }>>({});
 
@@ -71,7 +75,7 @@ const distribuerCartes = (joueurList: string[]) => {
   const tempMainsJoueurs: Record<string, {
     pioche: { nombre: number; couleur: string }[],
     cartesJouees: { nombre: number; couleur: string }[],
-    series: { nombre: number; couleur: string }[],
+    series: { serie: { nombre: number; couleur: string }[], totalSerie: number }[],
     cartesVictoire: { nombre: number; couleur: string }[]
   }> = {};
 
@@ -158,12 +162,37 @@ const distribuerCartes = (joueurList: string[]) => {
 };
 
 /**
- * Attend un évènement pour passer au joueur suivant (emis par le composant PlateauJeu)
+ * Attend un évènement a chaque action d'un joueur (emis par le composant PlateauJeu)
  */
-const passerAuJoueurSuivant = () => {
-  joueurActuel.value = (joueurActuel.value + 1) % Object.keys(mainsJoueurs.value).length;
+const actualisationPlateauJeu = (typeChangement: number) => {
+  if (typeChangement === 0) {
+    joueurActuel.value = (joueurActuel.value + 1) % Object.keys(mainsJoueurs.value).length;
+  } else if (typeChangement === 1) {
+    joueurActuel.value = (joueurActuel.value - 1) % Object.keys(mainsJoueurs.value).length;
+    rejouer()
+  } else if (typeChangement === -1) {
+    // Rien à faire car le joueur actuel reste le même (carte qu'il a voulu jouer n'est pas valide)
+  }
 };
+
+/**
+ * Redistribue les cartes aux joueurs et réinitialise le plateau de jeu
+ */
+const rejouer = () => {
+  // Transfert les cartes jouées dans la pioche, puis mélange la pioche
+  for (let joueur in mainsJoueurs.value) {
+    mainsJoueurs.value[joueur].pioche.push(...mainsJoueurs.value[joueur].cartesJouees);
+    mainsJoueurs.value[joueur].cartesJouees = [];
+    mainsJoueurs.value[joueur].series = [];
+    mainsJoueurs.value[joueur].pioche = mainsJoueurs.value[joueur].pioche.sort(() => Math.random() - 0.5);
+  }
+  // Réinitialise le plateau de jeu
+  reloadPlateauJeu.value += 1;
+  // Passe au joueur suivant
+  joueurActuel.value = (joueurActuel.value + 1) % Object.keys(mainsJoueurs.value).length;
+}
 </script>
+
 
 <style scoped>
 .punto-container {

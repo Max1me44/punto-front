@@ -14,6 +14,7 @@
   </div>
 </template>
 
+
 <script setup lang="ts">
 import {computed} from "vue";
 import Carte from "@/components/Carte.vue";
@@ -42,6 +43,7 @@ const prochaineCarte = computed(() => {
   return props.mainsJoueurs[joueurList.value[props.joueurActuel]].pioche[0];
 });
 </script>
+
 
 <style scoped>
 .player-info {

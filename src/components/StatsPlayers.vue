@@ -11,7 +11,7 @@
         <div v-for="(serie, serieIndex) in joueur.series" :key="serieIndex" class="serie">
           <div class="serie-number">{{ serieIndex + 1 }}:</div>
           <div class="serie-carte">
-            <Carte v-for="(carte, carteIndex) in serie" :key="carteIndex" :nombre="carte.nombre"
+            <Carte v-for="(carte, carteIndex) in serie.serie" :key="carteIndex" :nombre="carte.nombre"
                    :couleur="carte.couleur" class="small-carte"/>
           </div>
         </div>
@@ -20,6 +20,7 @@
     </div>
   </div>
 </template>
+
 
 <script setup lang="ts">
 import Carte from "@/components/Carte.vue";
@@ -30,6 +31,7 @@ const joueurActuelIndex = ref(props.joueurActuel);
 const joueurActuelNom = computed(() => Object.keys(props.mainsJoueurs)[joueurActuelIndex.value]);
 watch(() => props.joueurActuel, () => joueurActuelIndex.value = props.joueurActuel);
 </script>
+
 
 <style scoped>
 .player-info {
