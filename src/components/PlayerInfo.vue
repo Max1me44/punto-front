@@ -2,6 +2,7 @@
   <div class="player-info">
     <div class="player-info-header">
       <h2>{{ joueurList[joueurActuel] }}</h2>
+      <p>Nb parties jouées/gagnées: {{ statsJoueur.nombre_parties }} / {{ statsJoueur.nombre_parties_gagnees }}</p>
       <p>Cartes restantes: {{ nombreCartesRestantes }}</p>
     </div>
     <div class="next-card">
@@ -16,8 +17,11 @@
 
 
 <script setup lang="ts">
-import {computed} from "vue";
+import {computed, onMounted, ref, watch} from "vue";
 import Carte from "@/components/Carte.vue";
+import axios from 'axios';
+import {URL_API} from "@/constants/common";
+import {storage} from "@/stores/storage";
 
 const props = defineProps(['joueurActuel', 'mainsJoueurs']);
 
@@ -41,6 +45,32 @@ const nombreCartesRestantes = computed(() => {
  */
 const prochaineCarte = computed(() => {
   return props.mainsJoueurs[joueurList.value[props.joueurActuel]].pioche[0];
+});
+
+/**
+ * Renvoie les stats du joueur actuel (nombre de parties jouées et gagnées)
+ */
+const statsJoueur = ref({
+  nombre_parties: 0,
+  nombre_parties_gagnees: 0
+});
+const fetchJoueurStats = async () => {
+  const nomJoueurActuel = joueurList.value[props.joueurActuel];
+  try {
+    const response = await axios.get(URL_API + storage.getDatabaseType() + `/joueurs/${nomJoueurActuel}/`);
+    if (response.status === 200) {
+      statsJoueur.value.nombre_parties = response.data.nombre_parties;
+      statsJoueur.value.nombre_parties_gagnees = response.data.nombre_parties_gagnees;
+    }
+  } catch (error) {
+    console.error(error);
+  }
+};
+onMounted(() => {
+  fetchJoueurStats();
+});
+watch(() => props.joueurActuel, () => {
+  fetchJoueurStats();
 });
 </script>
 

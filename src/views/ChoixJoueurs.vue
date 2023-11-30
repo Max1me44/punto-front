@@ -38,6 +38,8 @@ import {ref, onMounted} from 'vue';
 import {ElForm, ElRadioGroup, ElRadio, ElInput, ElButton, ElAlert} from 'element-plus';
 import {storage} from '@/stores/storage';
 import router from '@/router/index';
+import axios from 'axios';
+import {URL_API} from "@/constants/common";
 
 const form = ref({
   playerCount: 2,
@@ -49,10 +51,15 @@ const error = ref(''); // Message d'erreur si formulaire invalide
 
 // Check si les valeurs est déjà stockée dans le storage
 onMounted(() => {
-  const storedPlayerConfig = storage.getPlayerConfig();
-  if (storedPlayerConfig) {
-    form.value.playerCount = storedPlayerConfig.playerCount;
-    form.value.players = storedPlayerConfig.players;
+  const databaseType = storage.getDatabaseType();
+  if (databaseType) {
+    const storedPlayerConfig = storage.getPlayerConfig();
+    if (storedPlayerConfig) {
+      form.value.playerCount = storedPlayerConfig.playerCount;
+      form.value.players = storedPlayerConfig.players;
+    }
+  } else {
+    router.push({name: 'bdd'});
   }
 });
 
@@ -87,6 +94,15 @@ const validateForm = async () => {
         playerCount: form.value.playerCount,
         players: form.value.players,
       });
+
+      // Ajoute les joueurs dans la bdd choisie
+      try {
+        for (let i = 0; i < form.value.playerCount; i++) {
+          const response = await axios.post(URL_API + storage.getDatabaseType() + `/joueurs/create/?nom=${form.value.players[i].name}`);
+        }
+      } catch (e) {
+        console.log(e);
+      }
 
       // Redirection vers la page de jeu
       router.push({name: 'punto'});

@@ -37,10 +37,11 @@ const mainsJoueurs = ref<Record<string, {
 }>>({});
 
 onMounted(() => {
+  const databaseType = storage.getDatabaseType();
   const joueurListTemp = storage.getPlayersTable();
   const nombreJoueurs = storage.getPlayerCount();
   let joueurList = [];
-  if (joueurListTemp && nombreJoueurs && nombreJoueurs >= 2 && nombreJoueurs <= 4) {
+  if (databaseType && joueurListTemp && nombreJoueurs && nombreJoueurs >= 2 && nombreJoueurs <= 4) {
     for (let i = 0; i < nombreJoueurs; i++) {
       joueurList.push(joueurListTemp[i]);
     }

@@ -36,6 +36,9 @@ import {ElAlert} from 'element-plus';
 import {TAILLE_PLATEAU} from "@/constants/common";
 import {ElMessage, ElMessageBox} from 'element-plus'
 import router from "@/router";
+import axios from 'axios';
+import {URL_API} from "@/constants/common";
+import {storage} from "@/stores/storage";
 
 const props = defineProps(['joueurActuel', 'mainsJoueurs', 'reloadPlateauJeu']);
 const emit = defineEmits();
@@ -381,8 +384,22 @@ const stockerSerie = (row: number, col: number, index: number, dirX: number, dir
  * @param joueur joueur gagnant
  * @param typeVictoire type de victoire (victoire ou série)
  */
-const afficherVictoire = (joueur: string, typeVictoire: string) => {
+const afficherVictoire = async (joueur: string, typeVictoire: string) => {
   openVictoire(joueur, typeVictoire);
+  // Enregistre la partie dans la bdd (joueur, gagnant ou non)
+  try {
+    for (let i = 0; i < Object.keys(props.mainsJoueurs).length; i++) {
+      const joueurNom = Object.keys(props.mainsJoueurs)[i];
+      const gagnant = joueurNom === joueur;
+      const data = {
+        joueur: joueurNom,
+        gagnant: gagnant
+      };
+      const response = await axios.post(URL_API + storage.getDatabaseType() + `/parties/create/?nom_joueur=${data.joueur}&gagnant=${data.gagnant}`);
+    }
+  } catch (e) {
+    console.log(e);
+  }
 };
 
 /**
