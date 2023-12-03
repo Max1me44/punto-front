@@ -1,5 +1,12 @@
 <template>
   <div class="punto-container">
+    <div class="info-part">
+      <PlayerInfo :joueurActuel="joueurActuel" :mainsJoueurs="mainsJoueurs"/>
+      <br/>
+      <div style="text-align: center">
+        <el-button type="info" @click="addData">Ajouter données</el-button>
+      </div>
+    </div>
     <div class="main-part">
       <PlateauJeu
           :joueurActuel="joueurActuel"
@@ -9,8 +16,6 @@
       />
     </div>
     <div class="info-part">
-      <PlayerInfo :joueurActuel="joueurActuel" :mainsJoueurs="mainsJoueurs"/>
-      <br/>
       <StatsPlayers :joueurActuel="joueurActuel" :mainsJoueurs="mainsJoueurs"/>
     </div>
   </div>
@@ -25,6 +30,8 @@ import StatsPlayers from "@/components/StatsPlayers.vue";
 import {storage} from '@/stores/storage';
 import {COULEURS} from "@/constants/common";
 import router from "@/router";
+import axios from 'axios';
+import {URL_API} from "@/constants/common";
 
 const reloadPlateauJeu = ref(0); // Permet de recharger le composant PlateauJeu lorsque les joueurs rejouent
 
@@ -191,6 +198,30 @@ const rejouer = () => {
   reloadPlateauJeu.value += 1;
   // Passe au joueur suivant
   joueurActuel.value = (joueurActuel.value + 1) % Object.keys(mainsJoueurs.value).length;
+}
+
+/**
+ * Ajoute des données dans la base de données sélectionnée
+ */
+const addData = async () => {
+  const databaseType = storage.getDatabaseType();
+  const listeJoueurs = ["Maxime", "Alexandre", "Julien", "Thomas", "Louis", "Marie", "Antoine", "Josephine", "Paul", "Jean", "Pierre", "Jacques", "Luc", "Lucie", "Marie", "Jeannne"];
+  try {
+    // Ajoute des joueurs
+    for (let i = 0; i < listeJoueurs.length; i++) {
+      const response = await axios.post(URL_API + databaseType + `/joueurs/create/?nom=${listeJoueurs[i]}`);
+    }
+
+    // Ajoute des parties random
+    for (let i = 0; i < 30; i++) {
+      // joueur aléatoire (nom du joueur) et gagnant aléatoire (booléen)
+      const joueur = listeJoueurs[Math.floor(Math.random() * listeJoueurs.length)];
+      const gagnant = Math.random() >= 0.5;
+      const response = await axios.post(URL_API + databaseType + `/parties/create/?nom_joueur=${joueur}&gagnant=${gagnant}`);
+    }
+  } catch (e) {
+    console.log(e);
+  }
 }
 </script>
 

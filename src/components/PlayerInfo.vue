@@ -2,7 +2,8 @@
   <div class="player-info">
     <div class="player-info-header">
       <h2>{{ joueurList[joueurActuel] }}</h2>
-      <p>Nb parties jouées/gagnées: {{ statsJoueur.nombre_parties }} / {{ statsJoueur.nombre_parties_gagnees }}</p>
+      <p>Nb parties jouées: {{ statsJoueur.nombre_parties }}</p>
+      <p>Nb parties gagnées: {{ statsJoueur.nombre_parties_gagnees }}</p>
       <p>Cartes restantes: {{ nombreCartesRestantes }}</p>
     </div>
     <div class="next-card">
