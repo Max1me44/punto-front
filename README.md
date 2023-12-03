@@ -45,7 +45,10 @@ L'enssemble des rèfles du Punto ont été respectées sauf le jeu 2vs2.
 ### Choix de la base de données
 
 Au lancement de l'application, l'utilisateur arrive sur la page d'accueil. Il doit alors choisir une base de données (
-MySQL, MongoDB ou SQLite). Au moment du choix de la base de donné, l'application va gérer en arrière plan la
+MySQL, MongoDB ou SQLite). Lorsque l'utilisateur choisie une base de données, 2 boutons apparaissent :
+- Le premier pour supprimer toutes les données sur toutes les bases de données
+- Le second pour synchroniser les données de toutes les bases de données sur la base de données choisie
+Au moment du choix de la base de donnée, l'application va gérer en arrière plan la
 synchnonisation des données entre la base de données. C'est à dire qu'elle va récupérer les données des autres bases de
 données et les stocker dans la base de données choisie. Le type de base de données choisie est alors stocké dans le
 local storage.  
