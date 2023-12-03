@@ -12,10 +12,9 @@
         >{{ item.text }}
         </el-button>
       </div>
-      <div v-if="selectedValue">
-        <router-link :to="{ name: 'joueurs' }">
-          <el-button type="success" @click="saveDatabaseType">Je valide !</el-button>
-        </router-link>
+      <div v-if="selectedValue" class="btn_next">
+        <el-button color="#626aef" size="large" :icon="Delete" @click="deleteAllData">et continuer</el-button>
+        <el-button type="success" size="large" :icon="UploadFilled" @click="synchronizeAllData">et continuer</el-button>
       </div>
     </div>
   </div>
@@ -25,6 +24,10 @@
 <script setup>
 import {ref, onMounted} from 'vue';
 import {storage} from "@/stores/storage"; // Gestion du storage
+import {UploadFilled, Delete} from '@element-plus/icons-vue'
+import axios from "axios";
+import {URL_API} from "@/constants/common";
+import router from '@/router/index';
 
 const selectedValue = ref(""); // Valeur sélectionnée
 
@@ -51,10 +54,33 @@ const selectDatabase = (value) => {
 };
 
 /**
+ * Supprime les données de toutes les bases de données
+ */
+const deleteAllData = async () => {
+  try {
+    for (let i = 0; i < options.length; i++) {
+      await axios.post(URL_API + options[i].value + `/reset/all`);
+    }
+  } catch (e) {
+    console.log(e);
+  }
+  saveDatabaseType();
+};
+
+/**
+ * Synchronise les données de toutes les bases de données sur le BDD selectionnée
+ */
+const synchronizeAllData = async () => {
+  // TODO : récupère toutes les données de toutes les BDD et les ajoutes dans la BDD selectionnée
+  saveDatabaseType();
+};
+
+/**
  * Enregistre la valeur sélectionnée dans le storage
  */
 const saveDatabaseType = () => {
   storage.setDatabaseType(selectedValue.value);
+  router.push({name: 'joueurs'});
 };
 </script>
 
@@ -83,5 +109,9 @@ const saveDatabaseType = () => {
 
 .el-button {
   margin: 5px;
+}
+
+.btn_next .el-button {
+  font-size: 20px;
 }
 </style>

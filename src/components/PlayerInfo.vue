@@ -56,15 +56,18 @@ const statsJoueur = ref({
   nombre_parties_gagnees: 0
 });
 const fetchJoueurStats = async () => {
-  const nomJoueurActuel = joueurList.value[props.joueurActuel];
-  try {
-    const response = await axios.get(URL_API + storage.getDatabaseType() + `/joueurs/${nomJoueurActuel}/`);
-    if (response.status === 200) {
-      statsJoueur.value.nombre_parties = response.data.nombre_parties;
-      statsJoueur.value.nombre_parties_gagnees = response.data.nombre_parties_gagnees;
+  const joueurListValue = joueurList.value;
+  if (joueurListValue.length > 0 && props.joueurActuel !== undefined) {
+    const nomJoueurActuel = joueurListValue[props.joueurActuel];
+    try {
+      const response = await axios.get(URL_API + storage.getDatabaseType() + `/joueurs/${nomJoueurActuel}/`);
+      if (response.status === 200) {
+        statsJoueur.value.nombre_parties = response.data.nombre_parties;
+        statsJoueur.value.nombre_parties_gagnees = response.data.nombre_parties_gagnees;
+      }
+    } catch (error) {
+      console.error(error);
     }
-  } catch (error) {
-    console.error(error);
   }
 };
 onMounted(() => {
