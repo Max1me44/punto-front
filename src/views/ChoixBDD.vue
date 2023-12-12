@@ -35,6 +35,7 @@ const options = [
   {value: "mysql", text: "MySQL"},
   {value: "mongodb", text: "MongoDB"},
   {value: "sqlite", text: "SQLite"},
+  {value: "neo4j", text: "Neo4J"},
 ];
 
 // Check si une valeur est déjà stockée dans le storage
